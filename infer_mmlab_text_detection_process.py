@@ -165,20 +165,17 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Transform model output in an Ikomia format to be displayed
         for polygone_conf in boundary_result:
             pts = np.array(polygone_conf[:-1], dtype=float)
-            area_box = area(pts.reshape((-1,2)))
 
-            # only output box with non zero area
-            if area_box>0:
-                pts = [core.CPointF(x, y) for x, y in zip(pts[0::2], pts[1::2])]
-                conf = polygone_conf[-1]
-                prop_poly = core.GraphicsPolygonProperty()
-                prop_poly.pen_color = color
-                graphics_box = graphics_output.addPolygon(pts, prop_poly)
-                graphics_box.setCategory('text')
-                # Label
-                name = 'text'
-                detected_names.append(name)
-                detected_conf.append(float(conf))
+            pts = [core.CPointF(x, y) for x, y in zip(pts[0::2], pts[1::2])]
+            conf = polygone_conf[-1]
+            prop_poly = core.GraphicsPolygonProperty()
+            prop_poly.pen_color = color
+            graphics_box = graphics_output.addPolygon(pts, prop_poly)
+            graphics_box.setCategory('text')
+            # Label
+            name = 'text'
+            detected_names.append(name)
+            detected_conf.append(float(conf))
 
         numeric_output.addValueList(detected_conf, "Confidence", detected_names)
 
