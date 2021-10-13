@@ -20,14 +20,11 @@ import os.path
 import torch.cuda
 from ikomia import core, dataprocess
 from mmocr.apis.inference import *
-import cv2
 import numpy as np
-from mmocr.utils.ocr import MMOCR
-from pathlib import Path
 import copy
 import distutils
 from mmcv import Config
-from infer_mmlab_text_detection.utils import textdet_models, area
+from infer_mmlab_text_detection.utils import textdet_models
 
 
 # Your imports below
@@ -42,7 +39,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
     def __init__(self):
         core.CWorkflowTaskParam.__init__(self)
         # Place default value initialization here
-        # Example : self.windowSize = 25
         self.update = False
         self.model_name = "DB_r50"
         self.cfg = ""
@@ -52,7 +48,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
     def setParamMap(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
-        # Example : self.windowSize = int(param_map["windowSize"])
         self.update = distutils.util.strtobool(param_map["update"])
         self.model_name = param_map["model_name"]
         self.cfg = param_map["cfg"]
@@ -63,7 +58,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
         param_map = core.ParamMap()
-        # Example : paramMap["windowSize"] = str(self.windowSize)
         param_map["update"] = str(self.update)
         param_map["model_name"] = self.model_name
         param_map["cfg"] = self.cfg
@@ -112,7 +106,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Get output :
         graphics_output = self.getOutput(1)
 
-        # Init numeric output
+        # Init numeric and graphics outputs
         numeric_output = self.getOutput(2)
         graphics_output.setNewLayer("mmlab_text_detection")
         graphics_output.setImageIndex(0)
@@ -120,7 +114,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         numeric_output.setOutputType(dataprocess.NumericOutputType.TABLE)
         self.forwardInputImage(0, 0)
 
-        # Load models into memory
+        # Load models into memory if needed
         if self.model is None or param.update:
             device = torch.device(self.device)
             if not (param.custom_training):
@@ -165,7 +159,6 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Transform model output in an Ikomia format to be displayed
         for polygone_conf in boundary_result:
             pts = np.array(polygone_conf[:-1], dtype=float)
-
             pts = [core.CPointF(x, y) for x, y in zip(pts[0::2], pts[1::2])]
             conf = polygone_conf[-1]
             prop_poly = core.GraphicsPolygonProperty()
@@ -215,7 +208,8 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         # Code source repository
         self.info.repository = "https://github.com/open-mmlab/mmocr"
         # Keywords used for search
-        self.info.keywords = "mmlab, mmocr, text, detection, pytorch, dbnet, mask-rcnn, textsnake"
+        self.info.keywords = "mmlab, mmocr, text, detection, pytorch, dbnet, mask-rcnn, textsnake, pan-net, drrg, " \
+                             "pse-net"
 
     def create(self, param=None):
         # Create process object

@@ -1,6 +1,3 @@
-import numpy as np
-from scipy.linalg import det
-
 textdet_models = {
             'DB_r18': {
                 'config':
@@ -81,18 +78,3 @@ textdet_models = {
                 'textsnake/textsnake_r50_fpn_unet_1200e_ctw1500-27f65b64.pth'
             }
         }
-
-
-def area(pts):
-    """
-    :param pts: array of coordinates of vertices [[x,y],[x,y]...]
-    :return: area of quadrilateral or triangle formed by the points
-    """
-    n = len(pts)
-    if n == 4:
-        return area(pts[:3]) + area(np.roll(pts, [-2], axis=[0])[:3])
-    if n == 3:
-        mat = np.ones((3, 3))
-        mat[:, 0] = pts[:, 0]
-        mat[:, 1] = pts[:, 1]
-        return round(abs(0.5 * det(mat)), 1)
