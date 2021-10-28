@@ -123,13 +123,17 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 cfg = disable_text_recog_aug_test(cfg)
                 ckpt = os.path.join('https://download.openmmlab.com/mmocr/textdet/',
                                     textdet_models[param.model_name]["ckpt"])
-                self.model = init_detector(cfg, ckpt, device=device)
             else:
                 cfg = Config.fromfile(param.cfg)
                 ckpt = param.weights if param.weights != "" and param.custom_training else None
-                self.model = init_detector(cfg, ckpt, device=device)
+
+            cfg.test_pipeline[0]['type']='LoadImageFromNdarray'
+            cfg.data.test.pipeline=cfg.test_pipeline
+            self.model = init_detector(cfg, ckpt, device=device)
+
             param.update = False
             print("Model loaded!")
+
 
         if self.model is not None:
             if img is not None:
