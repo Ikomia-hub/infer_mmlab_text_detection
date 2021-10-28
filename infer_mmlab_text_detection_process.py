@@ -25,9 +25,7 @@ import copy
 import distutils
 from mmcv import Config
 from infer_mmlab_text_detection.utils import textdet_models
-
-
-# Your imports below
+import mmocr.datasets.pipelines
 
 
 # --------------------
@@ -127,8 +125,6 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 cfg = Config.fromfile(param.cfg)
                 ckpt = param.weights if param.weights != "" and param.custom_training else None
 
-            cfg.test_pipeline[0]['type']='LoadImageFromNdarray'
-            cfg.data.test.pipeline=cfg.test_pipeline
             self.model = init_detector(cfg, ckpt, device=device)
 
             param.update = False
