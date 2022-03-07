@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os.path
 
+import cv2
 import torch.cuda
 from ikomia import core, dataprocess
 from mmocr.apis.inference import *
@@ -112,7 +113,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         graphics_output.setImageIndex(0)
         numeric_output.clearData()
         numeric_output.setOutputType(dataprocess.NumericOutputType.TABLE)
-        self.forwardInputImage(0, 0)
+        forwarded_output = self.getOutput(0)
 
         # Load models into memory if needed
         if self.model is None or param.update:
@@ -120,23 +121,25 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             if not (param.custom_training):
                 cfg = Config.fromfile(os.path.join(os.path.dirname(__file__), "configs/textdet",
                                                    textdet_models[param.model_name]["config"]))
-                cfg = disable_text_recog_aug_test(cfg)
                 ckpt = os.path.join('https://download.openmmlab.com/mmocr/textdet/',
                                     textdet_models[param.model_name]["ckpt"])
             else:
                 cfg = Config.fromfile(param.cfg)
                 ckpt = param.weights if param.weights != "" and param.custom_training else None
 
-            cfg.test_pipeline[0]['type']='LoadImageFromNdarray'
-            cfg.data.test.pipeline=cfg.test_pipeline
+            cfg.test_pipeline[0]['type'] = 'LoadImageFromNdarray'
+            cfg.test_pipeline[1].img_scale = (2000, 1800)
+            cfg.data.test.pipeline = cfg.test_pipeline
             self.model = init_detector(cfg, ckpt, device=device)
 
             param.update = False
             print("Model loaded!")
 
-
         if self.model is not None:
             if img is not None:
+                if img.ndim == 2:
+                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+                forwarded_output.setImage(img)
                 self.infere(img, graphics_output, numeric_output)
             else:
                 print("No input image")
@@ -153,6 +156,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         color = [255, 0, 0]
         detected_names = []
         detected_conf = []
+        h, w = np.shape(img)[:2]
         out = model_inference(self.model,
                               img,
                               ann=None,
@@ -163,7 +167,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Transform model output in an Ikomia format to be displayed
         for polygone_conf in boundary_result:
             pts = np.array(polygone_conf[:-1], dtype=float)
-            pts = [core.CPointF(x, y) for x, y in zip(pts[0::2], pts[1::2])]
+            pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
             conf = polygone_conf[-1]
             prop_poly = core.GraphicsPolygonProperty()
             prop_poly.pen_color = color
@@ -175,6 +179,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             detected_conf.append(float(conf))
 
         numeric_output.addValueList(detected_conf, "Confidence", detected_names)
+
+    def clamp(self, x, min, max):
+        return min if x < min else max - 1 if x > max - 1 else x
 
     def stop(self):
         super().stop()
