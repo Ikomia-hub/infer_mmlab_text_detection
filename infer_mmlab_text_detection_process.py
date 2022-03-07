@@ -26,9 +26,7 @@ import copy
 import distutils
 from mmcv import Config
 from infer_mmlab_text_detection.utils import textdet_models
-
-
-# Your imports below
+import mmocr.datasets.pipelines
 
 
 # --------------------
