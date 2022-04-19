@@ -27,6 +27,7 @@ import distutils
 from mmcv import Config
 from infer_mmlab_text_detection.utils import textdet_models
 import mmocr.datasets.pipelines
+import os
 
 
 # --------------------
@@ -39,9 +40,13 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         core.CWorkflowTaskParam.__init__(self)
         # Place default value initialization here
         self.update = False
-        self.model_name = "DB_r50"
-        self.cfg = ""
-        self.weights = ""
+        self.model_name = "dbnet"
+        self.custom_cfg = ""
+        self.custom_weights = ""
+        self.cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", "dbnet",
+                                "dbnet_r50dcnv2_fpnc_1200e_icdar2015.py")
+        self.weights = "https://download.openmmlab.com/mmocr/textdet/dbnet" \
+                       "/dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth "
         self.custom_training = False
 
     def setParamMap(self, param_map):
@@ -52,6 +57,8 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.cfg = param_map["cfg"]
         self.weights = param_map["weights"]
         self.custom_training = distutils.util.strtobool(param_map["custom_training"])
+        self.custom_cfg = param_map["custom_cfg"]
+        self.custom_weights = param_map["custom_weights"]
 
     def getParamMap(self):
         # Send parameters values to Ikomia application
@@ -62,6 +69,8 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         param_map["cfg"] = self.cfg
         param_map["weights"] = self.weights
         param_map["custom_training"] = str(self.custom_training)
+        param_map["custom_cfg"] = self.custom_cfg
+        param_map["custom_weights"] = self.custom_weights
         return param_map
 
 
@@ -116,18 +125,18 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Load models into memory if needed
         if self.model is None or param.update:
             device = torch.device(self.device)
-            if not (param.custom_training):
-                cfg = Config.fromfile(os.path.join(os.path.dirname(__file__), "configs/textdet",
-                                                   textdet_models[param.model_name]["config"]))
-                ckpt = os.path.join('https://download.openmmlab.com/mmocr/textdet/',
-                                    textdet_models[param.model_name]["ckpt"])
+            if not param.custom_training:
+                cfg = param.cfg
+                ckpt = param.weights
             else:
-                cfg = Config.fromfile(param.cfg)
-                ckpt = param.weights if param.weights != "" and param.custom_training else None
+                print("dans run : "+param.custom_cfg)
+                cfg = Config.fromfile(param.custom_cfg)
+                ckpt = param.weights if param.custom_weights != "" and param.custom_training else None
 
-            cfg.test_pipeline[0]['type'] = 'LoadImageFromNdarray'
-            cfg.test_pipeline[1].img_scale = (2000, 1800)
-            cfg.data.test.pipeline = cfg.test_pipeline
+                """cfg.test_pipeline[0]['type'] = 'LoadImageFromNdarray'
+                cfg.test_pipeline[1].img_scale = (2000, 1800)
+                cfg.data.test.pipeline = cfg.test_pipeline"""
+
             self.model = init_detector(cfg, ckpt, device=device)
 
             param.update = False
