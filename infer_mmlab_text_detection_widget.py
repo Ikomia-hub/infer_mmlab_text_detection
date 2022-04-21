@@ -22,7 +22,6 @@ from infer_mmlab_text_detection.infer_mmlab_text_detection_process import InferM
 
 # PyQt GUI framework
 from PyQt5.QtWidgets import *
-from infer_mmlab_text_detection.utils import textdet_models
 import os
 import yaml
 
@@ -130,7 +129,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.parameters.custom_cfg = self.browse_cfg.path
         self.parameters.custom_weights = self.browse_model.path
         self.parameters.custom_training = self.check_custom_training.isChecked()
-        self.parameters.cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)),self.available_cfg_ckpt[self.combo_config.currentText()]["cfg"])
+        _, self.parameters.cfg = os.path.split(self.available_cfg_ckpt[self.combo_config.currentText()]["cfg"])
         self.parameters.weights = self.available_cfg_ckpt[self.combo_config.currentText()]["ckpt"]
 
         # update model
