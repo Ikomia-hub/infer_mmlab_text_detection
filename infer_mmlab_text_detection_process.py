@@ -25,9 +25,9 @@ import numpy as np
 import copy
 import distutils
 from mmcv import Config
-from infer_mmlab_text_detection.utils import textdet_models
 import mmocr.datasets.pipelines
 import os
+from mmocr.utils.model import revert_sync_batchnorm
 
 
 # --------------------
@@ -43,8 +43,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.model_name = "dbnet"
         self.custom_cfg = ""
         self.custom_weights = ""
-        self.cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", "dbnet",
-                                "dbnet_r50dcnv2_fpnc_1200e_icdar2015.py")
+        self.cfg = "dbnet_r50dcnv2_fpnc_1200e_icdar2015.py"
         self.weights = "https://download.openmmlab.com/mmocr/textdet/dbnet" \
                        "/dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth "
         self.custom_training = False
@@ -126,18 +125,14 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         if self.model is None or param.update:
             device = torch.device(self.device)
             if not param.custom_training:
-                cfg = param.cfg
+                cfg = Config.fromfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", param.model_name, param.cfg))
                 ckpt = param.weights
             else:
-                print("dans run : "+param.custom_cfg)
                 cfg = Config.fromfile(param.custom_cfg)
-                ckpt = param.weights if param.custom_weights != "" and param.custom_training else None
-
-                """cfg.test_pipeline[0]['type'] = 'LoadImageFromNdarray'
-                cfg.test_pipeline[1].img_scale = (2000, 1800)
-                cfg.data.test.pipeline = cfg.test_pipeline"""
+                ckpt = param.custom_weights
 
             self.model = init_detector(cfg, ckpt, device=device)
+            self.model = revert_sync_batchnorm(self.model)
 
             param.update = False
             print("Model loaded!")
