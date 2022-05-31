@@ -142,7 +142,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 if img.ndim == 2:
                     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
                 forwarded_output.setImage(img)
-                self.infere(img, graphics_output, numeric_output)
+                self.infer(img, graphics_output, numeric_output)
             else:
                 print("No input image")
         else:
@@ -154,7 +154,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Call endTaskRun to finalize process
         self.endTaskRun()
 
-    def infere(self, img, graphics_output, numeric_output):
+    def infer(self, img, graphics_output, numeric_output):
         color = [255, 0, 0]
         detected_names = []
         detected_conf = []
