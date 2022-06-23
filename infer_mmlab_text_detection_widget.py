@@ -39,6 +39,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
             self.parameters = InferMmlabTextDetectionParam()
         else:
             self.parameters = param
+
         # Create layout : QGridLayout by default
         self.grid_layout = QGridLayout()
 
@@ -51,13 +52,14 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.combo_model = pyqtutils.append_combo(self.grid_layout, "Model")
         self.combo_config = pyqtutils.append_combo(self.grid_layout, "Config name")
         self.configs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet")
+
         for dir in os.listdir(self.configs_path):
             if os.path.isdir(os.path.join(self.configs_path, dir)) and dir != "_base_":
                 self.combo_model.addItem(dir)
 
-        self.combo_model.currentTextChanged.connect(self.on_combo_model_changed)
-
         self.combo_model.setCurrentText(self.parameters.model_name)
+        self.on_combo_model_changed(self.parameters.model_name)
+        self.combo_model.currentTextChanged.connect(self.on_combo_model_changed)
 
         # Model weights
         self.label_model_path = QLabel("Model path (.pth)")
@@ -89,30 +91,32 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         # Set widget layout
         self.setLayout(layout_ptr)
 
-    def on_combo_model_changed(self, int):
+    def on_combo_model_changed(self, model_name):
         if self.combo_model.currentText() != "":
             self.combo_config.clear()
             current_model = self.combo_model.currentText()
             config_names = []
             yaml_file = os.path.join(self.configs_path, current_model, "metafile.yml")
+
             if os.path.isfile(yaml_file):
                 with open(yaml_file, "r") as f:
                     models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
 
                 self.available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
                                                                 'ckpt': model_dict["Weights"]}
-                                           for
-                                           model_dict in models_list}
+                                           for model_dict in models_list}
+
                 for experiment_name in self.available_cfg_ckpt.keys():
                     self.combo_config.addItem(experiment_name)
                     config_names.append(experiment_name)
 
-                if self.parameters.cfg in config_names:
-                    self.combo_config.setCurrentText(self.parameters.cfg)
+                cfg_name = os.path.splitext(self.parameters.cfg)[0]
+                if cfg_name in config_names:
+                    self.combo_config.setCurrentText(cfg_name)
                 else:
                     self.combo_config.setCurrentText(list(self.available_cfg_ckpt.keys())[0])
 
-    def on_check_custom_training_changed(self, int):
+    def on_check_custom_training_changed(self, state):
         self.combo_model.setEnabled(not (self.check_custom_training.isChecked()))
         self.combo_config.setEnabled(not (self.check_custom_training.isChecked()))
         self.label_cfg.setEnabled(self.check_custom_training.isChecked())
@@ -122,9 +126,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
 
     def onApply(self):
         # Apply button clicked slot
-
         # Get parameters from widget
-        # Example : self.parameters.windowSize = self.spinWindowSize.value()
         self.parameters.model_name = self.combo_model.currentText()
         self.parameters.custom_cfg = self.browse_cfg.path
         self.parameters.custom_weights = self.browse_model.path
