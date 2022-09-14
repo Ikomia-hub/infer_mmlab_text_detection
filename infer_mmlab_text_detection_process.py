@@ -19,11 +19,10 @@ import os.path
 
 import cv2
 import torch.cuda
-from ikomia import core, dataprocess
+from ikomia import utils, core, dataprocess
 from mmocr.apis.inference import *
 import numpy as np
 import copy
-import distutils
 from mmcv import Config
 import mmocr.datasets.pipelines
 import os
@@ -51,11 +50,11 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
     def setParamMap(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
-        self.update = distutils.util.strtobool(param_map["update"])
+        self.update = utils.strtobool(param_map["update"])
         self.model_name = param_map["model_name"]
         self.cfg = param_map["cfg"]
         self.weights = param_map["weights"]
-        self.custom_training = distutils.util.strtobool(param_map["custom_training"])
+        self.custom_training = utils.strtobool(param_map["custom_training"])
         self.custom_cfg = param_map["custom_cfg"]
         self.custom_weights = param_map["custom_weights"]
 
