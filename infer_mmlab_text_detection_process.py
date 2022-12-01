@@ -20,13 +20,12 @@ import os.path
 import cv2
 import torch.cuda
 from ikomia import utils, core, dataprocess
-from mmocr.apis.inference import *
+from mmocr.apis.inferencers import TextDetInferencer
 import numpy as np
 import copy
-from mmcv import Config
-import mmocr.datasets.pipelines
+from mmengine import Config
 import os
-from mmocr.utils.model import revert_sync_batchnorm
+from mmocr.utils import register_all_modules
 
 
 # --------------------
@@ -122,16 +121,14 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
         # Load models into memory if needed
         if self.model is None or param.update:
-            device = torch.device(self.device)
             if not param.custom_training:
-                cfg = Config.fromfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", param.model_name, param.cfg))
+                cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", param.model_name, param.cfg)
                 ckpt = param.weights
             else:
-                cfg = Config.fromfile(param.custom_cfg)
+                cfg = param.custom_cfg
                 ckpt = param.custom_weights
-
-            self.model = init_detector(cfg, ckpt, device=device)
-            self.model = revert_sync_batchnorm(self.model)
+            register_all_modules()
+            self.model = TextDetInferencer(cfg, ckpt, device=self.device)
 
             param.update = False
             print("Model loaded!")
@@ -158,18 +155,12 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         detected_names = []
         detected_conf = []
         h, w = np.shape(img)[:2]
-        out = model_inference(self.model,
-                              img,
-                              ann=None,
-                              batch_mode=False,
-                              return_data=True)
-        boundary_result = out[0]['boundary_result']
+        out = self.model(img)
 
         # Transform model output in an Ikomia format to be displayed
-        for polygone_conf in boundary_result:
-            pts = np.array(polygone_conf[:-1], dtype=float)
+        for polygon, conf in zip(out['polygons'], out['scores']):
+            pts = np.array(polygon, dtype=float)
             pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
-            conf = polygone_conf[-1]
             prop_poly = core.GraphicsPolygonProperty()
             prop_poly.pen_color = color
             graphics_box = graphics_output.addPolygon(pts, prop_poly)
