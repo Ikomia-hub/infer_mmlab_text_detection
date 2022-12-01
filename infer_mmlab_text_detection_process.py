@@ -23,7 +23,6 @@ from ikomia import utils, core, dataprocess
 from mmocr.apis.inferencers import TextDetInferencer
 import numpy as np
 import copy
-from mmengine import Config
 import os
 from mmocr.utils import register_all_modules
 
