@@ -19,11 +19,13 @@
 from ikomia import core, dataprocess
 from ikomia.utils import pyqtutils, qtconversion
 from infer_mmlab_text_detection.infer_mmlab_text_detection_process import InferMmlabTextDetectionParam
+from infer_mmlab_text_detection.infer_mmlab_text_detection_process import InferMmlabTextDetectionParam
+from infer_mmlab_text_detection.utils import Autocomplete
 
 # PyQt GUI framework
 from PyQt5.QtWidgets import *
 import os
-import yaml
+from fnmatch import fnmatch
 
 
 # --------------------
@@ -43,96 +45,65 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         # Create layout : QGridLayout by default
         self.grid_layout = QGridLayout()
 
-        # Pretrained or custom training
-        self.check_custom_training = pyqtutils.append_check(self.grid_layout, "Custom training",
-                                                            self.parameters.custom_training)
-        self.check_custom_training.stateChanged.connect(self.on_check_custom_training_changed)
-
-        # Models
-        self.combo_model = pyqtutils.append_combo(self.grid_layout, "Model")
-        self.combo_config = pyqtutils.append_combo(self.grid_layout, "Config name")
-        self.configs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet")
-
-        for dir in os.listdir(self.configs_path):
-            if os.path.isdir(os.path.join(self.configs_path, dir)) and dir != "_base_":
-                self.combo_model.addItem(dir)
-
-        self.combo_model.setCurrentText(self.parameters.model_name)
-        self.on_combo_model_changed(self.parameters.model_name)
-        self.combo_model.currentTextChanged.connect(self.on_combo_model_changed)
-
         # Model weights
-        self.label_model_path = QLabel("Model path (.pth)")
-        self.browse_model = pyqtutils.BrowseFileWidget(path=self.parameters.custom_weights, tooltip="Select file",
-                                                       mode=QFileDialog.ExistingFile)
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(self.label_model_path, row, 0)
-        self.grid_layout.addWidget(self.browse_model, row, 1)
-
+        self.browse_model = pyqtutils.append_browse_file(self.grid_layout,
+                                                        label="Model path (.onnx)",
+                                                        path=self.parameters.weights,
+                                                        mode=QFileDialog.ExistingFile)
+     
         # Model cfg
-        self.label_cfg = QLabel("Config file (.py)")
-        self.browse_cfg = pyqtutils.BrowseFileWidget(path=self.parameters.custom_cfg, tooltip="Select file",
-                                                     mode=QFileDialog.ExistingFile)
-
-        # Hide or show widgets depending on user's choice
-        self.combo_model.setEnabled(not (self.check_custom_training.isChecked()))
-        self.label_cfg.setEnabled(self.check_custom_training.isChecked())
-        self.label_model_path.setEnabled(self.check_custom_training.isChecked())
-        self.browse_cfg.setEnabled(self.check_custom_training.isChecked())
-        self.browse_model.setEnabled(self.check_custom_training.isChecked())
-
-        row = self.grid_layout.rowCount()
-        self.grid_layout.addWidget(self.label_cfg, row, 0)
-        self.grid_layout.addWidget(self.browse_cfg, row, 1)
-
+        model_cfg_list = self.getFileList("mmocr","textdet")
+        self.combo_model_cfg = Autocomplete(model_cfg_list,
+                                            parent=None,
+                                            i=True,
+                                            allow_duplicates=False)
+        self.label_model_cfg = QLabel("Model config (.py)")
+        self.grid_layout.addWidget(self.combo_model_cfg, 2, 2)
+        self.grid_layout.addWidget(self.label_model_cfg, 2, 0)
+        self.combo_model_cfg.setCurrentText(self.parameters.model_cfg)
+        
+        # Deploy cfg
+        model_cfg_list = self.getFileList("mmdeploy","text-detection")
+        
+        self.combo_deploy_cfg = Autocomplete(model_cfg_list,
+                                             parent=None,
+                                             i=True,
+                                             allow_duplicates=False)
+        self.label_deploy_cfg = QLabel("Deploy config (.py)")
+        self.grid_layout.addWidget(self.combo_deploy_cfg, 3, 2)
+        self.grid_layout.addWidget(self.label_deploy_cfg, 3, 0)
+        self.combo_deploy_cfg.setCurrentText(self.parameters.deploy_cfg)
         # PyQt -> Qt wrapping
         layout_ptr = qtconversion.PyQtToQt(self.grid_layout)
 
         # Set widget layout
         self.setLayout(layout_ptr)
-
-    def on_combo_model_changed(self, model_name):
-        if self.combo_model.currentText() != "":
-            self.combo_config.clear()
-            current_model = self.combo_model.currentText()
-            config_names = []
-            yaml_file = os.path.join(self.configs_path, current_model, "metafile.yml")
-
-            if os.path.isfile(yaml_file):
-                with open(yaml_file, "r") as f:
-                    models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
-
-                self.available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
-                                                                'ckpt': model_dict["Weights"]}
-                                           for model_dict in models_list}
-
-                for experiment_name in self.available_cfg_ckpt.keys():
-                    self.combo_config.addItem(experiment_name)
-                    config_names.append(experiment_name)
-
-                cfg_name = os.path.splitext(self.parameters.cfg)[0]
-                if cfg_name in config_names:
-                    self.combo_config.setCurrentText(cfg_name)
-                else:
-                    self.combo_config.setCurrentText(list(self.available_cfg_ckpt.keys())[0])
-
-    def on_check_custom_training_changed(self, state):
-        self.combo_model.setEnabled(not (self.check_custom_training.isChecked()))
-        self.combo_config.setEnabled(not (self.check_custom_training.isChecked()))
-        self.label_cfg.setEnabled(self.check_custom_training.isChecked())
-        self.label_model_path.setEnabled(self.check_custom_training.isChecked())
-        self.browse_cfg.setEnabled(self.check_custom_training.isChecked())
-        self.browse_model.setEnabled(self.check_custom_training.isChecked())
+        
+    def getFileList(self, root_folder, task):
+        if task=="textdet":
+            cfg_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                        root_folder, "configs", task)
+        if task=="text-detection":
+            cfg_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                                        root_folder, "configs", "mmocr", task)
+        root = cfg_dir
+        pattern = "*.py"
+        cfg_list = []
+        for path, _, files in os.walk(root):
+            for name in files:
+                if fnmatch(name, pattern):
+                    full_path = os.path.join(path, name)
+                    cfg_list.append(os.sep.join(
+                                os.path.normpath(full_path).split(os.sep)[-2:]))
+        return cfg_list
 
     def onApply(self):
         # Apply button clicked slot
         # Get parameters from widget
-        self.parameters.model_name = self.combo_model.currentText()
-        self.parameters.custom_cfg = self.browse_cfg.path
-        self.parameters.custom_weights = self.browse_model.path
-        self.parameters.custom_training = self.check_custom_training.isChecked()
-        _, self.parameters.cfg = os.path.split(self.available_cfg_ckpt[self.combo_config.currentText()]["cfg"])
-        self.parameters.weights = self.available_cfg_ckpt[self.combo_config.currentText()]["ckpt"]
+        self.parameters.weights = self.browse_model.path
+        self.parameters.model_cfg = self.combo_model_cfg.currentText()
+        self.parameters.deploy_cfg = self.combo_deploy_cfg.currentText()
+
 
         # update model
         self.parameters.update = True
