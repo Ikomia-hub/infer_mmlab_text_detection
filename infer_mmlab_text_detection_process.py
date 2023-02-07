@@ -15,16 +15,16 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os.path
+
 import cv2
 import torch
 from ikomia import utils, core, dataprocess
-#from mmocr.apis.inferencers import TextDetInferencer
 import numpy as np
 import copy
 import os
 from mmdeploy.apis.utils import build_task_processor
 from mmdeploy.utils import get_input_shape, load_config
+from mmocr.utils import register_all_modules
 
 # --------------------
 # - Class to handle the process parameters
@@ -39,7 +39,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.weights = ""
         self.model_cfg = "dbnet/dbnet_resnet50_1200e_icdar2015.py"
         self.deploy_cfg = "text-detection/text-detection_onnxruntime_dynamic.py"
-        
+
     def setParamMap(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
@@ -47,7 +47,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.weights = param_map["weights"]
         self.model_cfg = param_map["model_cfg"]
         self.deploy_cfg = param_map["deploy_cfg"]
-       
+
     def getParamMap(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
@@ -92,7 +92,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # This is handled by the main progress bar of Ikomia application
         return 1
 
-    def run(self):               
+    def run(self):
         # Core function of your process
         # Call beginTaskRun for initialization
         self.beginTaskRun()
@@ -122,14 +122,15 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             # read deploy_cfg and model_cfg
             deploy_cfg, model_cfg = load_config(deploy_cfg, model_cfg)
             # build task
+            register_all_modules()
             self.task_processor = build_task_processor(model_cfg, deploy_cfg, self.device)
             # process input image and backend model
             self.model = self.task_processor.build_backend_model(backend_files)
             print("Model loaded!")
-            # process input image  
+            # process input image
             self.input_shape = get_input_shape(deploy_cfg)
             param.update = False
- 
+
         if self.model is not None:
             if img is not None:
                 if img.ndim == 2:
@@ -137,7 +138,8 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 forwarded_output.setImage(img)
                 # process input image
                 model_inputs, _ = self.task_processor.create_input(
-                                                        imgs= input.sourceFilePath,
+                                                        imgs= img,
+                                                        #imgs= input.sourceFilePath,
                                                         input_shape = self.input_shape)
                 self.infer(img, graphics_output, numeric_output, model_inputs)
             else:
@@ -163,7 +165,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         confidences = out[0].pred_instances.scores.numpy()
         for polygon, conf in zip(polygons, confidences):
             pts = np.array(polygon, dtype=float)
-            pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
+            pts = [core.CPointF(self.clamp(x, 0, w),
+                                self.clamp(y, 0, h)) for x, y in zip(pts[0::2],
+                                                                     pts[1::2])]
             prop_poly = core.GraphicsPolygonProperty()
             prop_poly.pen_color = color
             graphics_box = graphics_output.addPolygon(pts, prop_poly)
@@ -192,11 +196,12 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         dataprocess.CTaskFactory.__init__(self)
         # Set process information as string here
         self.info.name = "infer_mmlab_text_detection"
-        self.info.shortDescription = "Inference for MMOCR from MMLAB text detection models in .onnx format."
-        self.info.description = "Models should be in .onnx format. Make sure you give to the plugin the" \
-                                "corresponding model config file (.py) and deploy config file (.py)." \
-                                "If a costum (non-listed) config file is used, it should saved in the" \
-                                "appropriate config folder of the plugin."
+        self.info.shortDescription = "Inference for MMOCR from MMLAB text detection models in "\
+                                    ".onnx format."
+        self.info.description = "Models should be in .onnx format. Make sure you give to the " \
+                                "plugin the  corresponding model config file (.py) and deploy " \
+                                "config file (.py). If a costum (non-listed) config file is used," \
+                                " it should saved in the appropriate config folder of the plugin."
                                 
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Text"
