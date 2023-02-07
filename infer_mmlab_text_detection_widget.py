@@ -50,7 +50,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
                                                         label="Model path (.onnx)",
                                                         path=self.parameters.weights,
                                                         mode=QFileDialog.ExistingFile)
-     
+
         # Model cfg
         model_cfg_list = self.getFileList("mmocr","textdet")
         self.combo_model_cfg = Autocomplete(model_cfg_list,
@@ -61,10 +61,10 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.grid_layout.addWidget(self.combo_model_cfg, 2, 2)
         self.grid_layout.addWidget(self.label_model_cfg, 2, 0)
         self.combo_model_cfg.setCurrentText(self.parameters.model_cfg)
-        
+
         # Deploy cfg
         model_cfg_list = self.getFileList("mmdeploy","text-detection")
-        
+
         self.combo_deploy_cfg = Autocomplete(model_cfg_list,
                                              parent=None,
                                              i=True,
@@ -78,7 +78,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
 
         # Set widget layout
         self.setLayout(layout_ptr)
-        
+
     def getFileList(self, root_folder, task):
         if task=="textdet":
             cfg_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -103,7 +103,6 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.parameters.weights = self.browse_model.path
         self.parameters.model_cfg = self.combo_model_cfg.currentText()
         self.parameters.deploy_cfg = self.combo_deploy_cfg.currentText()
-
 
         # update model
         self.parameters.update = True
