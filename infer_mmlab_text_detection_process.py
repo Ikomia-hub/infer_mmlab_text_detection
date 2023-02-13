@@ -138,8 +138,8 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 forwarded_output.setImage(img)
                 # process input image
                 model_inputs, _ = self.task_processor.create_input(
-                                                        imgs= img,
-                                                        #imgs= input.sourceFilePath,
+                                                        #img,
+                                                        imgs= input.sourceFilePath,
                                                         input_shape = self.input_shape)
                 self.infer(img, graphics_output, numeric_output, model_inputs)
             else:
