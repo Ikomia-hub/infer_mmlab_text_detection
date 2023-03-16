@@ -89,7 +89,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         layout_ptr = qtconversion.PyQtToQt(self.grid_layout)
 
         # Set widget layout
-        self.setLayout(layout_ptr)
+        self.set_layout(layout_ptr)
 
     def on_combo_model_changed(self, model_name):
         if self.combo_model.currentText() != "":
@@ -124,7 +124,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.browse_cfg.setEnabled(self.check_custom_training.isChecked())
         self.browse_model.setEnabled(self.check_custom_training.isChecked())
 
-    def onApply(self):
+    def on_apply(self):
         # Apply button clicked slot
         # Get parameters from widget
         self.parameters.model_name = self.combo_model.currentText()
@@ -138,7 +138,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.parameters.update = True
 
         # Send signal to launch the process
-        self.emitApply(self.parameters)
+        self.emit_apply(self.parameters)
 
 
 # --------------------

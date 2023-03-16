@@ -45,7 +45,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
                        "/dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth "
         self.custom_training = False
 
-    def setParamMap(self, param_map):
+    def set_values(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
         self.update = utils.strtobool(param_map["update"])
@@ -56,10 +56,10 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.custom_cfg = param_map["custom_cfg"]
         self.custom_weights = param_map["custom_weights"]
 
-    def getParamMap(self):
+    def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = core.ParamMap()
+        param_map = {}
         param_map["update"] = str(self.update)
         param_map["model_name"] = self.model_name
         param_map["cfg"] = self.cfg
@@ -80,43 +80,35 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         dataprocess.C2dImageTask.__init__(self, name)
         # Add input/output of the process here
         # Add graphics output
-        self.addOutput(dataprocess.CGraphicsOutput())
-        # Add numeric output
-        self.addOutput(dataprocess.CNumericIO())
+        self.add_output(dataprocess.CTextIO())
 
         self.model = None
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         # Create parameters class
         if param is None:
-            self.setParam(InferMmlabTextDetectionParam())
+            self.set_param_object(InferMmlabTextDetectionParam())
         else:
-            self.setParam(copy.deepcopy(param))
+            self.set_param_object(copy.deepcopy(param))
 
-    def getProgressSteps(self):
+    def get_progress_steps(self):
         # Function returning the number of progress steps for this process
         # This is handled by the main progress bar of Ikomia application
         return 1
 
     def run(self):
         # Core function of your process
-        # Call beginTaskRun for initialization
-        self.beginTaskRun()
-        param = self.getParam()
+        # Call begin_task_run for initialization
+        self.begin_task_run()
+        param = self.get_param_object()
         # Get input :
-        input = self.getInput(0)
-        img = input.getImage()
+        input = self.get_input(0)
+        img = input.get_image()
 
         # Get output :
-        graphics_output = self.getOutput(1)
+        text_output = self.get_output(1)
 
-        # Init numeric and graphics outputs
-        numeric_output = self.getOutput(2)
-        graphics_output.setNewLayer("mmlab_text_detection")
-        graphics_output.setImageIndex(0)
-        numeric_output.clearData()
-        numeric_output.setOutputType(dataprocess.NumericOutputType.TABLE)
-        forwarded_output = self.getOutput(0)
+        forwarded_output = self.get_output(0)
 
         # Load models into memory if needed
         if self.model is None or param.update:
@@ -136,20 +128,20 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             if img is not None:
                 if img.ndim == 2:
                     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-                forwarded_output.setImage(img)
-                self.infer(img, graphics_output, numeric_output)
+                forwarded_output.set_image(img)
+                self.infer(img, text_output)
             else:
                 print("No input image")
         else:
             print("No model loaded")
 
         # Step progress bar:
-        self.emitStepProgress()
+        self.emit_step_progress()
 
-        # Call endTaskRun to finalize process
-        self.endTaskRun()
+        # Call end_task_run to finalize process
+        self.end_task_run()
 
-    def infer(self, img, graphics_output, numeric_output):
+    def infer(self, img, text_output):
         color = [255, 0, 0]
         detected_names = []
         detected_conf = []
@@ -157,19 +149,11 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         out = self.model(img)
 
         # Transform model output in an Ikomia format to be displayed
-        for polygon, conf in zip(out['polygons'], out['scores']):
+        for i, (polygon, conf) in enumerate(zip(out['polygons'], out['scores'])):
             pts = np.array(polygon, dtype=float)
             pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
-            prop_poly = core.GraphicsPolygonProperty()
-            prop_poly.pen_color = color
-            graphics_box = graphics_output.addPolygon(pts, prop_poly)
-            graphics_box.setCategory('text')
-            # Label
-            name = 'text'
-            detected_names.append(name)
-            detected_conf.append(float(conf))
 
-        numeric_output.addValueList(detected_conf, "Confidence", detected_names)
+            text_output.add_text_field(id=i, label="text", text="", confidence=float(conf), polygon=pts, color=color )
 
     def clamp(self, x, min, max):
         return min if x < min else max - 1 if x > max - 1 else x
@@ -188,7 +172,7 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         dataprocess.CTaskFactory.__init__(self)
         # Set process information as string here
         self.info.name = "infer_mmlab_text_detection"
-        self.info.shortDescription = "Inference for MMOCR from MMLAB text detection models"
+        self.info.short_description = "Inference for MMOCR from MMLAB text detection models"
         self.info.description = "If custom training is disabled, models will come from MMLAB's model zoo." \
                                 "Else, you can also choose to load a model you trained yourself with our plugin " \
                                 "train_mmlab_text_detection. In this case make sure you give to the plugin" \
@@ -197,7 +181,7 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Text"
         self.info.version = "1.0.1"
-        self.info.iconPath = "icons/mmlab.png"
+        self.info.icon_path = "icons/mmlab.png"
         self.info.authors = "Kuang, Zhanghui and Sun, Hongbin and Li, Zhizhong and Yue, Xiaoyu and Lin," \
                             " Tsui Hin and Chen, Jianyong and Wei, Huaqiang and Zhu, Yiqin and Gao, Tong and Zhang," \
                             " Wenwei and Chen, Kai and Zhang, Wayne and Lin, Dahua"
@@ -206,7 +190,7 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         self.info.year = 2021
         self.info.license = "Apache-2.0 License"
         # URL of documentation
-        self.info.documentationLink = "https://mmocr.readthedocs.io/en/latest/"
+        self.info.documentation_link = "https://mmocr.readthedocs.io/en/latest/"
         # Code source repository
         self.info.repository = "https://github.com/open-mmlab/mmocr"
         # Keywords used for search
