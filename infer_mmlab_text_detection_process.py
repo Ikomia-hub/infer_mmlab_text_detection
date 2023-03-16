@@ -153,7 +153,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             pts = np.array(polygon, dtype=float)
             pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
 
-            text_output.add_text_field(id=i, label="text", text="", confidence=float(conf), polygon=pts, color=color )
+            text_output.add_text_field(id=i, label="", text="", confidence=float(conf), polygon=pts, color=color )
 
     def clamp(self, x, min, max):
         return min if x < min else max - 1 if x > max - 1 else x
