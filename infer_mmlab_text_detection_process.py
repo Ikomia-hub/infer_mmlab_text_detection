@@ -155,8 +155,11 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
             text_output.add_text_field(id=i, label="", text="", confidence=float(conf), polygon=pts, color=color )
 
-    def clamp(self, x, min, max):
-        return min if x < min else max - 1 if x > max - 1 else x
+        text_output.finalize()
+
+    @staticmethod
+    def clamp(x, min_val, max_val):
+        return min_val if x < min_val else max_val - 1 if x > max_val - 1 else x
 
     def stop(self):
         super().stop()
