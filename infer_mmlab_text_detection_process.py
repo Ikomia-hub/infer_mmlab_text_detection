@@ -37,36 +37,42 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         core.CWorkflowTaskParam.__init__(self)
         # Place default value initialization here
         self.update = False
+        self.model_name_or_path = ""
+        self.config = ""
         self.model_name = "dbnet"
         self.custom_cfg = ""
-        self.custom_weights = ""
+        self.model_path = ""
         self.cfg = "dbnet_r50dcnv2_fpnc_1200e_icdar2015.py"
-        self.weights = "https://download.openmmlab.com/mmocr/textdet/dbnet" \
+        self.model_url = "https://download.openmmlab.com/mmocr/textdet/dbnet" \
                        "/dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth "
-        self.custom_training = False
+        self.use_custom_model = False
 
     def set_values(self, param_map):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
+        self.model_name_or_path = param_map["model_name_or_path"]
+        self.config = param_map["config"]
         self.update = utils.strtobool(param_map["update"])
         self.model_name = param_map["model_name"]
         self.cfg = param_map["cfg"]
-        self.weights = param_map["weights"]
-        self.custom_training = utils.strtobool(param_map["custom_training"])
+        self.model_url = param_map["model_url"]
+        self.use_custom_model = utils.strtobool(param_map["use_custom_model"])
         self.custom_cfg = param_map["custom_cfg"]
-        self.custom_weights = param_map["custom_weights"]
+        self.model_path = param_map["model_path"]
 
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
         param_map = {}
+        param_map["model_name_or_path"] = self.model_name_or_path
+        param_map["config"] = self.config
         param_map["update"] = str(self.update)
         param_map["model_name"] = self.model_name
         param_map["cfg"] = self.cfg
-        param_map["weights"] = self.weights
-        param_map["custom_training"] = str(self.custom_training)
+        param_map["model_url"] = self.model_url
+        param_map["use_custom_model"] = str(self.use_custom_model)
         param_map["custom_cfg"] = self.custom_cfg
-        param_map["custom_weights"] = self.custom_weights
+        param_map["model_path"] = self.model_path
         return param_map
 
 
@@ -112,12 +118,25 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
         # Load models into memory if needed
         if self.model is None or param.update:
-            if not param.custom_training:
+            if param.model_path != "":
+                param.use_custom_model = True
+                if os.path.isfile(param.config):
+                    param.custom_cfg = param.config
+            if param.model_name_or_path != "":
+                if os.path.isfile(param.model_name_or_path):
+                    param.use_custom_model = True
+                    param.model_path = param.model_name_or_path
+                    if os.path.isfile(param.config):
+                        param.custom_cfg = param.config
+                else:
+                    param.model_name = param.model_name_or_path
+    
+            if not param.use_custom_model:
                 cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", param.model_name, param.cfg)
-                ckpt = param.weights
+                ckpt = param.model_url
             else:
                 cfg = param.custom_cfg
-                ckpt = param.custom_weights
+                ckpt = param.model_path
             register_all_modules()
             self.model = TextDetInferencer(cfg, ckpt, device=self.device)
 

@@ -45,7 +45,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
 
         # Pretrained or custom training
         self.check_custom_training = pyqtutils.append_check(self.grid_layout, "Custom training",
-                                                            self.parameters.custom_training)
+                                                            self.parameters.use_custom_model)
         self.check_custom_training.stateChanged.connect(self.on_check_custom_training_changed)
 
         # Models
@@ -63,7 +63,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
 
         # Model weights
         self.label_model_path = QLabel("Model path (.pth)")
-        self.browse_model = pyqtutils.BrowseFileWidget(path=self.parameters.custom_weights, tooltip="Select file",
+        self.browse_model = pyqtutils.BrowseFileWidget(path=self.parameters.model_path, tooltip="Select file",
                                                        mode=QFileDialog.ExistingFile)
         row = self.grid_layout.rowCount()
         self.grid_layout.addWidget(self.label_model_path, row, 0)
@@ -129,10 +129,10 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         # Get parameters from widget
         self.parameters.model_name = self.combo_model.currentText()
         self.parameters.custom_cfg = self.browse_cfg.path
-        self.parameters.custom_weights = self.browse_model.path
-        self.parameters.custom_training = self.check_custom_training.isChecked()
+        self.parameters.model_path = self.browse_model.path
+        self.parameters.use_custom_model = self.check_custom_training.isChecked()
         _, self.parameters.cfg = os.path.split(self.available_cfg_ckpt[self.combo_config.currentText()]["cfg"])
-        self.parameters.weights = self.available_cfg_ckpt[self.combo_config.currentText()]["ckpt"]
+        self.parameters.model_url = self.available_cfg_ckpt[self.combo_config.currentText()]["ckpt"]
 
         # update model
         self.parameters.update = True
