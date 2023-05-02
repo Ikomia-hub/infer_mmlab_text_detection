@@ -42,9 +42,9 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.model_name = "dbnet"
         self.custom_cfg = ""
         self.model_path = ""
-        self.cfg = "dbnet_r50dcnv2_fpnc_1200e_icdar2015.py"
-        self.model_url = "https://download.openmmlab.com/mmocr/textdet/dbnet" \
-                       "/dbnet_r50dcnv2_fpnc_sbn_1200e_icdar2015_20211025-9fe3b590.pth "
+        self.cfg = "dbnet_resnet18_fpnc_1200e_icdar2015.py"
+        self.model_url = "https://download.openmmlab.com/mmocr/textdet/dbnet/dbnet_resnet18_fpnc_1200e_icdar2015/" \
+                         "dbnet_resnet18_fpnc_1200e_icdar2015_20220825_221614-7c0e94f2.pth"
         self.use_custom_model = False
 
     def set_values(self, param_map):
@@ -163,7 +163,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def infer(self, img, text_output):
         color = [255, 0, 0]
         h, w = np.shape(img)[:2]
-        out = self.model(img)
+        out = self.model(img)['predictions'][0]
 
         # Transform model output in an Ikomia format to be displayed
         for i, (polygon, conf) in enumerate(zip(out['polygons'], out['scores'])):
