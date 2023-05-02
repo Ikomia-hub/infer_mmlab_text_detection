@@ -143,8 +143,6 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
     def infer(self, img, text_output):
         color = [255, 0, 0]
-        detected_names = []
-        detected_conf = []
         h, w = np.shape(img)[:2]
         out = self.model(img)
 
