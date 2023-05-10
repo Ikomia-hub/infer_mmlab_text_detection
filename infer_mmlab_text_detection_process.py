@@ -38,7 +38,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         # Place default value initialization here
         self.update = False
         self.model_name_or_path = ""
-        self.config = ""
+        self.config_file = ""
         self.model_name = "dbnet"
         self.custom_cfg = ""
         self.model_path = ""
@@ -51,7 +51,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         # Set parameters values from Ikomia application
         # Parameters values are stored as string and accessible like a python dict
         self.model_name_or_path = param_map["model_name_or_path"]
-        self.config = param_map["config"]
+        self.config_file = param_map["config_file"]
         self.update = utils.strtobool(param_map["update"])
         self.model_name = param_map["model_name"]
         self.cfg = param_map["cfg"]
@@ -65,7 +65,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         # Create the specific dict structure (string container)
         param_map = {}
         param_map["model_name_or_path"] = self.model_name_or_path
-        param_map["config"] = self.config
+        param_map["config_file"] = self.config_file
         param_map["update"] = str(self.update)
         param_map["model_name"] = self.model_name
         param_map["cfg"] = self.cfg
@@ -120,14 +120,14 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         if self.model is None or param.update:
             if param.model_path != "":
                 param.use_custom_model = True
-                if os.path.isfile(param.config):
-                    param.custom_cfg = param.config
+                if os.path.isfile(param.config_file):
+                    param.custom_cfg = param.config_file
             if param.model_name_or_path != "":
                 if os.path.isfile(param.model_name_or_path):
                     param.use_custom_model = True
                     param.model_path = param.model_name_or_path
-                    if os.path.isfile(param.config):
-                        param.custom_cfg = param.config
+                    if os.path.isfile(param.config_file):
+                        param.custom_cfg = param.config_file
                 else:
                     param.model_name = param.model_name_or_path
     
