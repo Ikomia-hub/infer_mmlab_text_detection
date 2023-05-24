@@ -108,6 +108,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Get output :
         text_output = self.get_output(1)
 
+        # clear output before each run as temporary fix
+        text_output.clear_data()
+
         forwarded_output = self.get_output(0)
 
         # Load models into memory if needed
