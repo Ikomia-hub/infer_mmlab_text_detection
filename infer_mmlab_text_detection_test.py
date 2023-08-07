@@ -1,4 +1,3 @@
-from ikomia.core import task, ParamMap
 import ikomia
 import os
 import yaml
@@ -25,11 +24,11 @@ def test(t, data_dict):
                 for model_dict in models_list:
                     cfg = os.path.basename(model_dict["Config"])
                     ckpt = model_dict["Weights"]
-                    params = task.get_parameters(t)
+                    params = t.get_parameters()
                     params["cfg"] = cfg
                     params["model_weight_file"] = ckpt
                     params["model_name"] = directory
                     # without update = 1, model is not updated between 2 test
-                    params["update"] = 1
-                    task.set_parameters(t, params)
+                    params["update"] = "1"
+                    t.set_parameters(params)
                     yield run_for_test(t)
