@@ -7,7 +7,7 @@ from ikomia.utils.tests import run_for_test
 
 
 def test(t, data_dict):
-    plugins_folder = ikomia.ik_registry.getPluginsDirectory()
+    plugins_folder = ikomia.ik_registry.get_plugins_directory()
     plugin_folder = os.path.join(plugins_folder, "Python", t.name)
 
     img = cv2.imread(data_dict["images"]["detection"]["text"])[::-1]
