@@ -25,6 +25,7 @@ import numpy as np
 import copy
 import os
 from mmocr.utils import register_all_modules
+import yaml
 
 
 # --------------------
@@ -40,7 +41,7 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.config_file = ""
         self.model_name = "dbnet"
         self.model_weight_file = ""
-        self.cfg = "dbnet_resnet18_fpnc_1200e_icdar2015.py"
+        self.cfg = "dbnet_resnet18_fpnc_1200e_icdar2015"
         self.model_url = "https://download.openmmlab.com/mmocr/textdet/dbnet/dbnet_resnet18_fpnc_1200e_icdar2015/" \
                          "dbnet_resnet18_fpnc_1200e_icdar2015_20220825_221614-7c0e94f2.pth"
         self.use_custom_model = False
@@ -119,8 +120,23 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 param.use_custom_model = True
     
             if not param.use_custom_model:
-                cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet", param.model_name, param.cfg)
-                ckpt = param.model_url
+                yaml_file = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet"), param.model_name, "metafile.yml")
+
+                if os.path.isfile(yaml_file):
+                    with open(yaml_file, "r") as f:
+                        models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
+
+                    available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
+                                                                    'ckpt': model_dict["Weights"]}
+                                               for model_dict in models_list}
+                    if param.cfg in available_cfg_ckpt:
+                        cfg = available_cfg_ckpt[param.cfg]['cfg']
+                        ckpt = available_cfg_ckpt[param.cfg]['ckpt']
+                        cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), cfg)
+                    else:
+                        raise Exception(f"{param.cfg} dos not exist for {param.model_name}. Available configs for are {', '.join(list(available_cfg_ckpt.keys()))}")
+                else:
+                    raise Exception(f"Model name {param.model_name} does not exist.")
             else:
                 if os.path.isfile(param.cfg):
                     cfg = param.cfg
