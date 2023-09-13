@@ -42,8 +42,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.model_name = "dbnet"
         self.model_weight_file = ""
         self.cfg = "dbnet_resnet18_fpnc_1200e_icdar2015"
-        self.model_url = "https://download.openmmlab.com/mmocr/textdet/dbnet/dbnet_resnet18_fpnc_1200e_icdar2015/" \
-                         "dbnet_resnet18_fpnc_1200e_icdar2015_20220825_221614-7c0e94f2.pth"
         self.use_custom_model = False
 
     def set_values(self, param_map):
@@ -53,7 +51,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         self.update = utils.strtobool(param_map["update"])
         self.model_name = param_map["model_name"]
         self.cfg = param_map["cfg"]
-        self.model_url = param_map["model_url"]
         self.use_custom_model = utils.strtobool(param_map["use_custom_model"])
         self.model_weight_file = param_map["model_weight_file"]
 
@@ -65,7 +62,6 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
         param_map["update"] = str(self.update)
         param_map["model_name"] = self.model_name
         param_map["cfg"] = self.cfg
-        param_map["model_url"] = self.model_url
         param_map["use_custom_model"] = str(self.use_custom_model)
         param_map["model_weight_file"] = self.model_weight_file
         return param_map

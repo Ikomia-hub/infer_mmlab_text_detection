@@ -102,19 +102,17 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
                 with open(yaml_file, "r") as f:
                     models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
 
-                self.available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
-                                                                'ckpt': model_dict["Weights"]}
-                                           for model_dict in models_list}
+                available_cfg = [model_dict["Name"] for model_dict in models_list]
 
-                for experiment_name in self.available_cfg_ckpt.keys():
+                for experiment_name in available_cfg:
                     self.combo_config.addItem(experiment_name)
                     config_names.append(experiment_name)
 
-                cfg_name = os.path.splitext(self.parameters.cfg)[0]
+                cfg_name = self.parameters.cfg[:-3] if self.parameters.cfg.endswith('.py') else self.parameters.cfg
                 if cfg_name in config_names:
                     self.combo_config.setCurrentText(cfg_name)
                 else:
-                    self.combo_config.setCurrentText(list(self.available_cfg_ckpt.keys())[0])
+                    self.combo_config.setCurrentText(available_cfg[0])
 
     def on_check_custom_training_changed(self, state):
         self.combo_model.setEnabled(not (self.check_custom_training.isChecked()))
@@ -131,8 +129,7 @@ class InferMmlabTextDetectionWidget(core.CWorkflowTaskWidget):
         self.parameters.config_file = self.browse_cfg.path
         self.parameters.model_weight_file = self.browse_model.path
         self.parameters.use_custom_model = self.check_custom_training.isChecked()
-        _, self.parameters.cfg = os.path.split(self.available_cfg_ckpt[self.combo_config.currentText()]["cfg"])
-        self.parameters.model_url = self.available_cfg_ckpt[self.combo_config.currentText()]["ckpt"]
+        self.parameters.cfg = self.combo_config.currentText()
 
         # update model
         self.parameters.update = True
