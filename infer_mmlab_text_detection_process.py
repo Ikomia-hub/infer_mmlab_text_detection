@@ -186,6 +186,26 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def stop(self):
         super().stop()
 
+    @staticmethod
+    def get_model_zoo():
+        configs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet")
+        available_pairs = []
+        for model_name in os.listdir(configs_folder):
+            if model_name.startswith('_'):
+                continue
+            yaml_file = os.path.join(configs_folder, model_name, "metafile.yml")
+            if os.path.isfile(yaml_file):
+                with open(yaml_file, "r") as f:
+                    models_list = yaml.load(f, Loader=yaml.FullLoader)
+                    if 'Models' in models_list:
+                        models_list = models_list['Models']
+                    if not isinstance(models_list, list):
+                        continue
+                for model_dict in models_list:
+                    available_pairs.append({"model_name": model_name, "cfg": os.path.basename(model_dict["Name"])})
+        return available_pairs
+
+
 
 # --------------------
 # - Factory class to build process object
