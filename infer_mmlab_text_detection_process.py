@@ -122,6 +122,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             if not param.use_custom_model:
                 yaml_file = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet"), param.model_name, "metafile.yml")
 
+                if param.model_config.endswith('.py'):
+                    param.model_config = param.model_config[:-3]
+
                 if os.path.isfile(yaml_file):
                     with open(yaml_file, "r") as f:
                         models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
