@@ -102,41 +102,28 @@ graphics = algo.get_output(1).get_graphics_io()
 display(algo.get_output(0).get_image_with_graphics(graphics))
 ```
 
-Find below the exhaustive list of available combinations of **model_name** and **cfg**:
-- panet
-  - panet_resnet18_fpem-ffm_600e_ctw1500
-  - panet_resnet18_fpem-ffm_600e_icdar2015
-- textsnake
-  - textsnake_resnet50_fpn-unet_1200e_ctw1500
-  - textsnake_resnet50-oclip_fpn-unet_1200e_ctw1500
-- dbnetpp
-  - dbnetpp_resnet50_fpnc_1200e_icdar2015
-  - dbnetpp_resnet50-dcnv2_fpnc_1200e_icdar2015
-  - dbnetpp_resnet50-oclip_fpnc_1200e_icdar2015
-- maskrcnn
-  - mask-rcnn_resnet50_fpn_160e_ctw1500
-  - mask-rcnn_resnet50-oclip_fpn_160e_ctw1500
-  - mask-rcnn_resnet50_fpn_160e_icdar2015
-  - mask-rcnn_resnet50-oclip_fpn_160e_icdar2015
-- drrg
-  - drrg_resnet50_fpn-unet_1200e_ctw1500
-- fcenet
-  - fcenet_resnet50-dcnv2_fpn_1500e_ctw1500
-  - fcenet_resnet50-oclip_fpn_1500e_ctw1500
-  - fcenet_resnet50_fpn_1500e_icdar2015
-  - fcenet_resnet50-oclip_fpn_1500e_icdar2015
-  - fcenet_resnet50_fpn_1500e_totaltext
-- dbnet
-  - dbnet_resnet18_fpnc_1200e_icdar2015
-  - dbnet_resnet50_fpnc_1200e_icdar2015
-  - dbnet_resnet50-dcnv2_fpnc_1200e_icdar2015
-  - dbnet_resnet50-oclip_fpnc_1200e_icdar2015
-  - dbnet_resnet18_fpnc_1200e_totaltext
-- psenet
-  - psenet_resnet50_fpnf_600e_ctw1500
-  - psenet_resnet50-oclip_fpnf_600e_ctw1500
-  - psenet_resnet50_fpnf_600e_icdar2015
-  - psenet_resnet50-oclip_fpnf_600e_icdar2015
+To know what are all the available pairs (**model_name**, **cfg**), run this code snippet.
+
+```python
+from ikomia.dataprocess.workflow import Workflow
+
+# Init your workflow
+wf = Workflow()
+
+# Add algorithm
+algo = wf.add_task(name="infer_mmlab_text_detection", auto_connect=True)
+
+# Get possible parameters
+possible_parameters = algo.get_model_zoo()
+
+# Print them
+print(possible_parameters)
+
+# You can use one of them to choose your pretrain, here the first in the list
+algo.set_parameters(possible_parameters[0])
+
+# Then run on your image...
+```
 
 ## :mag: Explore algorithm outputs
 
