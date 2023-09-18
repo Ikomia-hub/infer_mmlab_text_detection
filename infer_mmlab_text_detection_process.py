@@ -112,36 +112,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
         # Load models into memory if needed
         if self.model is None or param.update:
-            if param.model_weight_file != "":
-                param.use_custom_model = True
     
-            if not param.use_custom_model:
-                yaml_file = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet"), param.model_name, "metafile.yml")
+            cfg, ckpt = self.get_full_paths(param)
 
-                if param.cfg.endswith('.py'):
-                    param.cfg = param.cfg[:-3]
-
-                if os.path.isfile(yaml_file):
-                    with open(yaml_file, "r") as f:
-                        models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
-
-                    available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
-                                                                    'ckpt': model_dict["Weights"]}
-                                               for model_dict in models_list}
-                    if param.cfg in available_cfg_ckpt:
-                        cfg = available_cfg_ckpt[param.cfg]['cfg']
-                        ckpt = available_cfg_ckpt[param.cfg]['ckpt']
-                        cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), cfg)
-                    else:
-                        raise Exception(f"{param.cfg} dos not exist for {param.model_name}. Available configs for are {', '.join(list(available_cfg_ckpt.keys()))}")
-                else:
-                    raise Exception(f"Model name {param.model_name} does not exist.")
-            else:
-                if os.path.isfile(param.cfg):
-                    cfg = param.cfg
-                else:
-                    cfg = param.config_file
-                ckpt = param.model_weight_file
             register_all_modules()
             self.model = TextDetInferencer(cfg, ckpt, device=self.device)
 
@@ -204,6 +177,35 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 for model_dict in models_list:
                     available_pairs.append({"model_name": model_name, "cfg": os.path.basename(model_dict["Name"])})
         return available_pairs
+
+    @staticmethod
+    def get_full_paths(param):
+        if param.model_weight_file == "":
+            yaml_file = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet"),
+                                     param.model_name, "metafile.yml")
+
+            if param.cfg.endswith('.py'):
+                param.cfg = param.cfg[:-3]
+
+            if os.path.isfile(yaml_file):
+                with open(yaml_file, "r") as f:
+                    models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
+
+                available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
+                                                           'ckpt': model_dict["Weights"]}
+                                      for model_dict in models_list}
+                if param.cfg in available_cfg_ckpt:
+                    cfg = available_cfg_ckpt[param.cfg]['cfg']
+                    ckpt = available_cfg_ckpt[param.cfg]['ckpt']
+                    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), cfg)
+                    return cfg, ckpt
+                else:
+                    raise Exception(
+                        f"{param.cfg} dos not exist for {param.model_name}. Available configs for are {', '.join(list(available_cfg_ckpt.keys()))}")
+            else:
+                raise Exception(f"Model name {param.model_name} does not exist.")
+        else:
+            return param.config_file, param.model_weight_file
 
 
 
