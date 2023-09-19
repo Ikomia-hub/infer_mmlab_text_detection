@@ -208,7 +208,6 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             return param.config_file, param.model_weight_file
 
 
-
 # --------------------
 # - Factory class to build process object
 # - Inherits PyDataProcess.CTaskFactory from Ikomia API
