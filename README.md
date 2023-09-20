@@ -48,11 +48,12 @@ algo = wf.add_task(name="infer_mmlab_text_detection", auto_connect=True)
 # Run on your image
 wf.run_on(url="https://discuss.poynt.net/uploads/default/original/2X/6/60c4199364474569561cba359d486e6c69ae8cba.jpeg")
 
-# Get graphics
-graphics = algo.get_output(1).get_graphics_io()
+# Get results
+original_image_output = algo.get_output(0)
+text_detection_output = algo.get_output(1)
 
 # Display results
-display(algo.get_output(0).get_image_with_graphics(graphics))
+display(original_image_output.get_image_with_graphics(text_detection_output))
 ```
 
 ## :sunny: Use with Ikomia Studio
@@ -95,11 +96,12 @@ algo.set_parameters({
 # Run on your image  
 wf.run_on(url="https://discuss.poynt.net/uploads/default/original/2X/6/60c4199364474569561cba359d486e6c69ae8cba.jpeg")
 
-# Get graphics
-graphics = algo.get_output(1).get_graphics_io()
+# Get results
+original_image_output = algo.get_output(0)
+text_detection_output = algo.get_output(1)
 
 # Display results
-display(algo.get_output(0).get_image_with_graphics(graphics))
+display(original_image_output.get_image_with_graphics(text_detection_output))
 ```
 
 To know what are all the available pairs (**model_name**, **cfg**), run this code snippet.
