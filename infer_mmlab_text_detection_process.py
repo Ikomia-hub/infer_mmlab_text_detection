@@ -110,6 +110,10 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
         forwarded_output = self.get_output(0)
 
+        # Set cache dir in the algorithm folder to simplify deployment
+        old_torch_hub = torch.hub.get_dir()
+        torch.hub.set_dir(os.path.join(os.path.dirname(__file__), "models"))
+
         # Load models into memory if needed
         if self.model is None or param.update:
     
@@ -131,6 +135,9 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 print("No input image")
         else:
             print("No model loaded")
+
+        # Reset torch cache dir for next algorithms in the workflow
+        torch.hub.set_dir(old_torch_hub)
 
         # Step progress bar:
         self.emit_step_progress()
