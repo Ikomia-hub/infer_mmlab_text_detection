@@ -21,7 +21,7 @@
 
 Run text detection models from MMLAB.
 
-![Result example](https://raw.githubusercontent.com/Ikomia-hub/infer_mmlab_text_detection/feat/new_readme/icons/results.jpg)
+![Result example](https://raw.githubusercontent.com/Ikomia-hub/infer_mmlab_text_detection/main/icons/results.jpg)
 
 ## :rocket: Use with Ikomia API
 
