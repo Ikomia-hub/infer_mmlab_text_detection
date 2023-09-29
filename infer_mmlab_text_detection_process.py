@@ -245,6 +245,8 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         # Keywords used for search
         self.info.keywords = "mmlab, mmocr, text, detection, pytorch, dbnet, mask-rcnn, textsnake, pan-net, drrg, " \
                              "pse-net"
+        self.info.algo_type = core.AlgoType.INFER
+        self.info.algo_tasks = "OCR"
 
     def create(self, param=None):
         # Create process object
