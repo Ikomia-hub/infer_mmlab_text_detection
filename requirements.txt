@@ -1,12 +1,13 @@
 --extra-index-url https://download.pytorch.org/whl/cu121
-torch==2.1.2
-torchvision==0.16.2
+torch==2.3.1
+torchvision==0.18.1
 
---find-links https://download.openmmlab.com/mmcv/dist/cu121/torch2.1/index.html
-mmcv==2.1.0
-mmdet==3.3.0
+--find-links https://download.openmmlab.com/mmcv/dist/cu121/torch2.3/index.html
+mmcv==2.2.0
 mmengine==0.10.7
-# mmocr -> from source to fix dependency lock with version 1.0.1
-git+https://github.com/open-mmlab/mmocr.git@966296f26ac34cf0e96d40ab4a0a94c9a697909a
+# mmdetection -> from source to fix dependency lock with version 3.3.0 (mmcv < 2.2.0)
+git+https://github.com/Ikomia-dev/mmdetection.git
+# mmocr -> from source to fix dependency lock with version 1.0.1 (mmcv < 2.2.0)
+git+https://github.com/Ikomia-dev/mmocr.git
 
 pillow>=11.0.0, <12.0.0
