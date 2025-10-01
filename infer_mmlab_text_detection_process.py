@@ -100,8 +100,8 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         self.begin_task_run()
         param = self.get_param_object()
         # Get input :
-        input = self.get_input(0)
-        img = input.get_image()
+        img_input = self.get_input(0)
+        img = img_input.get_image()
 
         # Get output :
         text_output = self.get_output(1)
@@ -252,6 +252,10 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
                              "pse-net"
         self.info.algo_type = core.AlgoType.INFER
         self.info.algo_tasks = "OCR"
+        self.info.hardware_config.min_cpu = 4
+        self.info.hardware_config.min_ram = 8
+        self.info.hardware_config.gpu_required = False
+        self.info.hardware_config.min_vram = 6
 
     def create(self, param=None):
         # Create process object
