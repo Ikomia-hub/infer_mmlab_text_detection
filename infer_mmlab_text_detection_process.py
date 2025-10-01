@@ -57,13 +57,14 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = {}
-        param_map["config_file"] = self.config_file
-        param_map["update"] = str(self.update)
-        param_map["model_name"] = self.model_name
-        param_map["cfg"] = self.cfg
-        param_map["use_custom_model"] = str(self.use_custom_model)
-        param_map["model_weight_file"] = self.model_weight_file
+        param_map = {
+            "config_file": self.config_file,
+            "update": str(self.update),
+            "model_name": self.model_name,
+            "cfg": self.cfg,
+            "use_custom_model": str(self.use_custom_model),
+            "model_weight_file": self.model_weight_file
+        }
         return param_map
 
 
@@ -76,7 +77,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def __init__(self, name, param):
         dataprocess.C2dImageTask.__init__(self, name)
         # Add input/output of the process here
-        # Add graphics output
+        # Add text output
         self.add_output(dataprocess.CTextIO())
 
         self.model = None
@@ -129,6 +130,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             if img is not None:
                 if img.ndim == 2:
                     img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
                 forwarded_output.set_image(img)
                 self.infer(img, text_output)
             else:
@@ -228,8 +230,10 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference for MMOCR from MMLAB text detection models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Text"
-        self.info.version = "2.0.2"
-        self.info.max_python_version = "3.10.0"
+        self.info.version = "2.1.0"
+        self.info.max_python_version = "3.9.0"
+        self.info.max_python_version = "3.11.0"
+        self.info.min_ikomia_version = "0.12.0"
         self.info.icon_path = "icons/mmlab.png"
         self.info.authors = "Kuang, Zhanghui and Sun, Hongbin and Li, Zhizhong and Yue, Xiaoyu and Lin," \
                             " Tsui Hin and Chen, Jianyong and Wei, Huaqiang and Zhu, Yiqin and Gao, Tong and Zhang," \
