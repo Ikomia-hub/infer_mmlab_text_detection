@@ -104,6 +104,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def init_long_process(self):
         register_all_modules()
         self._load_model()
+        super().init_long_process()
 
     def run(self):
         # Core function of your process
