@@ -15,17 +15,18 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os.path
+import os
+import copy
+import yaml
 
 import cv2
-import torch.cuda
-from ikomia import utils, core, dataprocess
-from mmocr.apis.inferencers import TextDetInferencer
+import torch
 import numpy as np
-import copy
-import os
+
+from ikomia import utils, core, dataprocess
+
 from mmocr.utils import register_all_modules
-import yaml
+from mmocr.apis.inferencers import TextDetInferencer
 
 
 # --------------------
@@ -57,13 +58,14 @@ class InferMmlabTextDetectionParam(core.CWorkflowTaskParam):
     def get_values(self):
         # Send parameters values to Ikomia application
         # Create the specific dict structure (string container)
-        param_map = {}
-        param_map["config_file"] = self.config_file
-        param_map["update"] = str(self.update)
-        param_map["model_name"] = self.model_name
-        param_map["cfg"] = self.cfg
-        param_map["use_custom_model"] = str(self.use_custom_model)
-        param_map["model_weight_file"] = self.model_weight_file
+        param_map = {
+            "config_file": self.config_file,
+            "update": str(self.update),
+            "model_name": self.model_name,
+            "cfg": self.cfg,
+            "use_custom_model": str(self.use_custom_model),
+            "model_weight_file": self.model_weight_file
+        }
         return param_map
 
 
@@ -76,7 +78,7 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def __init__(self, name, param):
         dataprocess.C2dImageTask.__init__(self, name)
         # Add input/output of the process here
-        # Add graphics output
+        # Add text output
         self.add_output(dataprocess.CTextIO())
 
         self.model = None
@@ -93,14 +95,25 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # This is handled by the main progress bar of Ikomia application
         return 1
 
+    def _load_model(self):
+        param = self.get_param_object()
+        cfg, ckpt = self.get_full_paths(param)
+        self.model = TextDetInferencer(cfg, ckpt, device=self.device)
+        param.update = False
+
+    def init_long_process(self):
+        register_all_modules()
+        self._load_model()
+        super().init_long_process()
+
     def run(self):
         # Core function of your process
         # Call begin_task_run for initialization
         self.begin_task_run()
         param = self.get_param_object()
         # Get input :
-        input = self.get_input(0)
-        img = input.get_image()
+        img_input = self.get_input(0)
+        img = img_input.get_image()
 
         # Get output :
         text_output = self.get_output(1)
@@ -115,26 +128,21 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         torch.hub.set_dir(os.path.join(os.path.dirname(__file__), "models"))
 
         # Load models into memory if needed
-        if self.model is None or param.update:
-    
-            cfg, ckpt = self.get_full_paths(param)
+        if param.update:
+            self._load_model()
 
-            register_all_modules()
-            self.model = TextDetInferencer(cfg, ckpt, device=self.device)
+        if not self.model:
+            raise RuntimeError("No model loaded. Please check algorithm paramters.")
 
-            param.update = False
-            print("Model loaded!")
+        if img is None:
+            raise RuntimeError("No input image.")
 
-        if self.model is not None:
-            if img is not None:
-                if img.ndim == 2:
-                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-                forwarded_output.set_image(img)
-                self.infer(img, text_output)
-            else:
-                print("No input image")
-        else:
-            print("No model loaded")
+
+        if img.ndim == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+        forwarded_output.set_image(img)
+        self.infer(img, text_output)
 
         # Reset torch cache dir for next algorithms in the workflow
         torch.hub.set_dir(old_torch_hub)
@@ -154,7 +162,6 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         for i, (polygon, conf) in enumerate(zip(out['polygons'], out['scores'])):
             pts = np.array(polygon, dtype=float)
             pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
-
             text_output.add_text_field(id=i, label="", text="", confidence=float(conf), polygon=pts, color=color )
 
         text_output.finalize()
@@ -170,9 +177,11 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
     def get_model_zoo():
         configs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet")
         available_pairs = []
+
         for model_name in os.listdir(configs_folder):
             if model_name.startswith('_'):
                 continue
+
             yaml_file = os.path.join(configs_folder, model_name, "metafile.yml")
             if os.path.isfile(yaml_file):
                 with open(yaml_file, "r") as f:
@@ -181,8 +190,10 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                         models_list = models_list['Models']
                     if not isinstance(models_list, list):
                         continue
+
                 for model_dict in models_list:
                     available_pairs.append({"model_name": model_name, "cfg": os.path.basename(model_dict["Name"])})
+
         return available_pairs
 
     @staticmethod
@@ -228,8 +239,10 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference for MMOCR from MMLAB text detection models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Text"
-        self.info.version = "2.0.2"
-        self.info.max_python_version = "3.10.0"
+        self.info.version = "2.1.0"
+        self.info.max_python_version = "3.9.0"
+        self.info.max_python_version = "3.11.0"
+        self.info.min_ikomia_version = "0.15.0"
         self.info.icon_path = "icons/mmlab.png"
         self.info.authors = "Kuang, Zhanghui and Sun, Hongbin and Li, Zhizhong and Yue, Xiaoyu and Lin," \
                             " Tsui Hin and Chen, Jianyong and Wei, Huaqiang and Zhu, Yiqin and Gao, Tong and Zhang," \
@@ -248,6 +261,10 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
                              "pse-net"
         self.info.algo_type = core.AlgoType.INFER
         self.info.algo_tasks = "OCR"
+        self.info.hardware_config.min_cpu = 4
+        self.info.hardware_config.min_ram = 8
+        self.info.hardware_config.gpu_required = False
+        self.info.hardware_config.min_vram = 6
 
     def create(self, param=None):
         # Create process object
