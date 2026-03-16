@@ -46,7 +46,7 @@ wf = Workflow()
 algo = wf.add_task(name="infer_mmlab_text_detection", auto_connect=True)
 
 # Run on your image
-wf.run_on(url="https://discuss.poynt.net/uploads/default/original/2X/6/60c4199364474569561cba359d486e6c69ae8cba.jpeg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_mmlab_text_detection/main/icons/input.jpg")
 
 # Get results
 original_image_output = algo.get_output(0)
@@ -94,7 +94,7 @@ algo.set_parameters({
 })
 
 # Run on your image  
-wf.run_on(url="https://discuss.poynt.net/uploads/default/original/2X/6/60c4199364474569561cba359d486e6c69ae8cba.jpeg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_mmlab_text_detection/main/icons/input.jpg")
 
 # Get results
 original_image_output = algo.get_output(0)
@@ -141,7 +141,7 @@ wf = Workflow()
 algo = wf.add_task(name="infer_mmlab_text_detection", auto_connect=True)
 
 # Run on your image  
-wf.run_on(url="https://discuss.poynt.net/uploads/default/original/2X/6/60c4199364474569561cba359d486e6c69ae8cba.jpeg")
+wf.run_on(url="https://raw.githubusercontent.com/Ikomia-hub/infer_mmlab_text_detection/main/icons/input.jpg")
 
 # Iterate over outputs
 for output in algo.get_outputs():
