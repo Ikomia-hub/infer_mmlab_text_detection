@@ -115,11 +115,11 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
             self._load_model()
 
         if not self.model:
-            raise RuntimeError("No model loaded. Please check algorithm paramters.")
+            raise RuntimeError(
+                "No model loaded. Please check algorithm paramters.")
 
         if img is None:
             raise RuntimeError("No input image.")
-
 
         if img.ndim == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
@@ -144,8 +144,10 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
         # Transform model output in an Ikomia format to be displayed
         for i, (polygon, conf) in enumerate(zip(out['polygons'], out['scores'])):
             pts = np.array(polygon, dtype=float)
-            pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h)) for x, y in zip(pts[0::2], pts[1::2])]
-            text_output.add_text_field(id=i, label="", text="", confidence=float(conf), polygon=pts, color=color )
+            pts = [core.CPointF(self.clamp(x, 0, w), self.clamp(y, 0, h))
+                   for x, y in zip(pts[0::2], pts[1::2])]
+            text_output.add_text_field(
+                id=i, label="", text="", confidence=float(conf), polygon=pts, color=color)
 
         text_output.finalize()
 
@@ -158,14 +160,16 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
     @staticmethod
     def get_model_zoo():
-        configs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "configs", "textdet")
+        configs_folder = os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "configs", "textdet")
         available_pairs = []
 
         for model_name in os.listdir(configs_folder):
             if model_name.startswith('_'):
                 continue
 
-            yaml_file = os.path.join(configs_folder, model_name, "metafile.yml")
+            yaml_file = os.path.join(
+                configs_folder, model_name, "metafile.yml")
             if os.path.isfile(yaml_file):
                 with open(yaml_file, "r") as f:
                     models_list = yaml.load(f, Loader=yaml.FullLoader)
@@ -175,7 +179,8 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                         continue
 
                 for model_dict in models_list:
-                    available_pairs.append({"model_name": model_name, "cfg": os.path.basename(model_dict["Name"])})
+                    available_pairs.append(
+                        {"model_name": model_name, "cfg": os.path.basename(model_dict["Name"])})
 
         return available_pairs
 
@@ -190,7 +195,8 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
 
             if os.path.isfile(yaml_file):
                 with open(yaml_file, "r") as f:
-                    models_list = yaml.load(f, Loader=yaml.FullLoader)['Models']
+                    models_list = yaml.load(
+                        f, Loader=yaml.FullLoader)['Models']
 
                 available_cfg_ckpt = {model_dict["Name"]: {'cfg': model_dict["Config"],
                                                            'ckpt': model_dict["Weights"]}
@@ -198,13 +204,15 @@ class InferMmlabTextDetection(dataprocess.C2dImageTask):
                 if param.cfg in available_cfg_ckpt:
                     cfg = available_cfg_ckpt[param.cfg]['cfg']
                     ckpt = available_cfg_ckpt[param.cfg]['ckpt']
-                    cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), cfg)
+                    cfg = os.path.join(os.path.dirname(
+                        os.path.abspath(__file__)), cfg)
                     return cfg, ckpt
                 else:
                     raise Exception(
                         f"{param.cfg} dos not exist for {param.model_name}. Available configs for are {', '.join(list(available_cfg_ckpt.keys()))}")
             else:
-                raise Exception(f"Model name {param.model_name} does not exist.")
+                raise Exception(
+                    f"Model name {param.model_name} does not exist.")
         else:
             return param.config_file, param.model_weight_file
 
@@ -222,9 +230,8 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         self.info.short_description = "Inference for MMOCR from MMLAB text detection models"
         # relative path -> as displayed in Ikomia application process tree
         self.info.path = "Plugins/Python/Text"
-        self.info.version = "2.2.0"
+        self.info.version = "3.0.0"
         self.info.min_python_version = "3.10.0"
-        self.info.max_python_version = "3.11.0"
         self.info.min_ikomia_version = "0.16.0"
         self.info.icon_path = "icons/mmlab.png"
         self.info.authors = "Kuang, Zhanghui and Sun, Hongbin and Li, Zhizhong and Yue, Xiaoyu and Lin," \
@@ -238,7 +245,7 @@ class InferMmlabTextDetectionFactory(dataprocess.CTaskFactory):
         self.info.documentation_link = "https://mmocr.readthedocs.io/en/latest/"
         # Code source repository
         self.info.repository = "https://github.com/Ikomia-hub/infer_mmlab_text_detection"
-        self.info.original_repository = "https://github.com/open-mmlab/mmocr"
+        self.info.original_repository = "https://github.com/Ikomia-dev/mmocr"
         # Keywords used for search
         self.info.keywords = "mmlab, mmocr, text, detection, pytorch, dbnet, mask-rcnn, textsnake, pan-net, drrg, " \
                              "pse-net"
